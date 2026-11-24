@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>USDT ↔ FCFA Invoice Calculator</title>
+<style>
+  :root{--bg:#0b0d10;--panel:#12151b;--panel2:#171b23;--line:#232936;--txt:#e8ecf3;--dim:#8b93a3;--lime:#c8f542;--radius:14px}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--txt);font-family:"Inter","Segoe UI",system-ui,-apple-system,sans-serif;min-height:100vh;display:flex;justify-content:center;padding:26px 16px}
+  .app{width:100%;max-width:560px}
+  .logo{font-weight:800;font-size:21px;letter-spacing:-.5px;margin-bottom:4px}.logo span{color:var(--lime)}
+  .sub{color:var(--dim);font-size:13px;margin-bottom:22px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+  .card h3{font-size:13px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px}
+  .rate-row{display:flex;align-items:center;gap:10px}
+  .rate-row input{width:120px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;color:var(--txt);font-size:15px;outline:none;font-variant-numeric:tabular-nums}
+  .rate-row span{color:var(--dim);font-size:13px}
+  .convert{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:end}
+  .field label{display:block;color:var(--dim);font-size:11.5px;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+  .field input{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:13px 14px;color:var(--txt);font-size:17px;font-weight:700;outline:none;font-variant-numeric:tabular-nums}
+  .field input:focus{border-color:var(--lime)}
+  .swap{background:var(--panel2);border:1px solid var(--line);color:var(--lime);border-radius:10px;width:42px;height:42px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-bottom:2px}
+  .lines{margin-top:4px}
+  .line{display:grid;grid-template-columns:1fr 70px 105px 74px 28px;gap:8px;margin-bottom:8px;align-items:center}
+  .line input{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 11px;color:var(--txt);font-size:13.5px;outline:none;width:100%}
+  .line .ltotal{text-align:right;font-variant-numeric:tabular-nums;font-size:13.5px;color:var(--txt)}
+  .rm{background:none;border:none;color:var(--dim);cursor:pointer;font-size:17px;padding:4px}
+  .rm:hover{color:var(--lime)}
+  .addline{background:none;border:1px dashed var(--line);color:var(--dim);width:100%;padding:10px;border-radius:10px;cursor:pointer;font-size:13px;margin-top:2px}
+  .addline:hover{color:var(--lime);border-color:var(--lime)}
+  .totals{border-top:1px solid var(--line);margin-top:14px;padding-top:14px}
+  .trow{display:flex;justify-content:space-between;font-size:14px;color:var(--dim);padding:3px 0}
+  .trow.grand{color:var(--txt);font-weight:800;font-size:19px;padding-top:8px}
+  .trow.grand span:last-child{color:var(--lime)}
+  .trow .num{font-variant-numeric:tabular-nums}
+  .copy{width:100%;margin-top:14px;background:var(--lime);color:#0b0d10;border:none;padding:13px;border-radius:11px;font-weight:800;font-size:14.5px;cursor:pointer}
+  .offline{display:flex;align-items:center;gap:8px;color:var(--dim);font-size:12px;margin-top:18px;justify-content:center}
+  .offline .dot{width:8px;height:8px;border-radius:50%;background:var(--lime)}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(90px);background:var(--lime);color:#0b0d10;font-weight:700;padding:12px 22px;border-radius:999px;transition:transform .25s;font-size:14px}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="logo">USDT <span>↔</span> FCFA</div>
+  <div class="sub">Invoice calculator · works fully offline</div>
+
+  <div class="card">
+    <h3>Exchange rate</h3>
+    <div class="rate-row">
+      <input id="rate" type="number" min="1" step="1" value="605" oninput="recalc()">
+      <span>FCFA per 1 USDT — set today's rate</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Quick convert</h3>
+    <div class="convert">
+      <div class="field"><label id="l-from">USDT</label><input id="amt" type="number" min="0" step="any" placeholder="0.00" oninput="recalc()"></div>
+      <button class="swap" onclick="swap()" title="Swap direction">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16V4M7 4L3 8M7 4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
+      </button>
+      <div class="field"><label id="l-to">FCFA</label><input id="out" readonly placeholder="0"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Invoice lines</h3>
+    <div class="lines" id="lines"></div>
+    <button class="addline" onclick="addLine()">+ Add line</button>
+    <div class="totals">
+      <div class="trow"><span>Total (USDT)</span><span class="num" id="t-usdt">0.00</span></div>
+      <div class="trow grand"><span>Total (FCFA)</span><span class="num" id="t-fcfa">0</span></div>
+    </div>
+    <button class="copy" onclick="copyInvoice()">Copy invoice summary</button>
+  </div>
+
+  <div class="offline"><span class="dot"></span>No connection needed — everything runs on this page.</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let dir="usdt2fcfa", lines=[{label:"",qty:1,price:0}];
+const $=id=>document.getElementById(id);
+const fmtF=n=>Math.round(n).toLocaleString("fr-FR").replace(/ /g," ");
+function rate(){return +$("rate").value||0}
+function recalc(){
+ const a=+$("amt").value||0,r=rate();
+ $("out").value=dir==="usdt2fcfa"?fmtF(a*r):r?(a/r).toFixed(2):"0";
+ let t=0;
+ document.querySelectorAll("#lines .line").forEach((row,i)=>{
+  const q=+row.querySelector(".lq").value||0,p=+row.querySelector(".lp").value||0;
+  const tot=q*p;t+=tot;row.querySelector(".ltotal").textContent=tot.toFixed(2);
+  lines[i]={label:row.querySelector(".ll").value,qty:q,price:p};
+ });
+ $("t-usdt").textContent=t.toFixed(2);
+ $("t-fcfa").textContent=fmtF(t*rate());
+}
+function swap(){
+ dir=dir==="usdt2fcfa"?"fcfa2usdt":"usdt2fcfa";
+ $("l-from").textContent=dir==="usdt2fcfa"?"USDT":"FCFA";
+ $("l-to").textContent=dir==="usdt2fcfa"?"FCFA":"USDT";
+ recalc();
+}
+function renderLines(){
+ $("lines").innerHTML=lines.map((l,i)=>`<div class="line">
+  <input class="ll" placeholder="Item" value="${l.label.replace(/"/g,"&quot;")}" oninput="recalc()">
+  <input class="lq" type="number" min="0" step="any" value="${l.qty}" oninput="recalc()">
+  <input class="lp" type="number" min="0" step="any" placeholder="Price" value="${l.price||""}" oninput="recalc()">
+  <span class="ltotal">0.00</span>
+  <button class="rm" onclick="rmLine(${i})" title="Remove">×</button></div>`).join("");
+}
+function rmLine(i){lines.splice(i,1);if(!lines.length)lines=[{label:"",qty:1,price:0}];renderLines();recalc()}
+function addLine(){lines.push({label:"",qty:1,price:0});renderLines();recalc()}
+function copyInvoice(){
+ const r=rate();
+ const txt=["INVOICE SUMMARY",...lines.filter(l=>l.label||l.price).map(l=>`${l.qty} × ${l.label||"Item"} @ ${l.price} USDT = ${(l.qty*l.price).toFixed(2)} USDT`),
+  `Total: ${$("t-usdt").textContent} USDT = ${$("t-fcfa").textContent} FCFA @ ${r}`].join("\n");
+ navigator.clipboard.writeText(txt).then(()=>toast("Invoice copied")).catch(()=>toast("Copy failed"));
+}
+function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),1800)}
+renderLines();recalc();
+</script>
+</body>
+</html>
