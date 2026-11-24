@@ -8,7 +8,7 @@
   :root{--bg:#0b0d10;--panel:#12151b;--panel2:#171b23;--line:#232936;--txt:#e8ecf3;--dim:#8b93a3;--lime:#c8f542;--radius:14px}
   *{margin:0;padding:0;box-sizing:border-box}
   body{background:var(--bg);color:var(--txt);font-family:"Inter","Segoe UI",system-ui,-apple-system,sans-serif;min-height:100vh;display:flex;justify-content:center;padding:26px 16px}
-  .app{width:100%;max-width:560px}
+  .app{margin-top:44px;width:100%;max-width:560px}
   .logo{font-weight:800;font-size:21px;letter-spacing:-.5px;margin-bottom:4px}.logo span{color:var(--lime)}
   .sub{color:var(--dim);font-size:13px;margin-bottom:22px}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:16px}
@@ -42,7 +42,7 @@
 </style>
 </head>
 <body>
-<div style="background:#c8f542;color:#0b0d10;font:600 13px/1.4 system-ui,sans-serif;text-align:center;padding:8px 12px;letter-spacing:.3px">DEMO — sample data only, not a real service · <span dir="rtl">نموذج تجريبي — بيانات وهمية</span></div>
+<div style="position:fixed;top:0;left:0;right:0;z-index:100;background:#c8f542;color:#0b0d10;font:600 13px/1.4 system-ui,sans-serif;text-align:center;padding:8px 12px;letter-spacing:.3px">DEMO — sample data only, not a real service · <span dir="rtl">نموذج تجريبي — بيانات وهمية</span></div>
 <div class="app">
   <div class="logo">USDT <span>↔</span> FCFA</div>
   <div class="sub">Invoice calculator · works fully offline</div>
